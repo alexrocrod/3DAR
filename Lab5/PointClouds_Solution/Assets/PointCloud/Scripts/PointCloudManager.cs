@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Globalization;
 using System.IO;
 
 public class PointCloudManager : MonoBehaviour {
@@ -31,6 +32,10 @@ public class PointCloudManager : MonoBehaviour {
 
 	
 	void Start () {
+		// Garantee Parsing as en-Us culture
+		CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+		CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
+
 		// Create Resources folder
 		createFolders ();
 
@@ -84,7 +89,8 @@ public class PointCloudManager : MonoBehaviour {
 		// Read file
 		StreamReader sr = new StreamReader (Application.dataPath + dPath);
 		sr.ReadLine (); // OFF
-		string[] buffer = sr.ReadLine ().Split(); // nPoints, nFaces
+		string[] buffer = sr.ReadLine().Split(' '); // nPoints, nFaces
+
 		
 		numPoints = int.Parse (buffer[0]);
 		points = new Vector3[numPoints];
@@ -92,10 +98,10 @@ public class PointCloudManager : MonoBehaviour {
 		minValue = new Vector3();
 		
 		for (int i = 0; i< numPoints; i++){
-			buffer = sr.ReadLine ().Split ();
+			buffer = sr.ReadLine().Split();
 
 			if (!invertYZ)
-				points[i] = new Vector3 (float.Parse (buffer[0])*scale, float.Parse (buffer[1])*scale,float.Parse (buffer[2])*scale) ;
+				points[i] = new Vector3(float.Parse(buffer[0])*scale, float.Parse (buffer[1])*scale,float.Parse (buffer[2])*scale) ;
 			else
 				points[i] = new Vector3 (float.Parse (buffer[0])*scale, float.Parse (buffer[2])*scale,float.Parse (buffer[1])*scale) ;
 			

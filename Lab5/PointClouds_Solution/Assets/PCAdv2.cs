@@ -1,10 +1,12 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System.Collections;
 using System.Globalization;
 using System.Collections.Generic;
 using System.IO;
+using TMPro;
+using static GlobalReferences;
 
-public class PointCloudManagerAdvanced : MonoBehaviour
+public class PCAdv2 : MonoBehaviour
 {
 
     // File
@@ -31,6 +33,7 @@ public class PointCloudManagerAdvanced : MonoBehaviour
     private Vector3[] points;
     private Color[] colors;
     private Vector3 minValue;
+    private Vector3 maxValue;
 
 
     void Start()
@@ -42,8 +45,18 @@ public class PointCloudManagerAdvanced : MonoBehaviour
         // Create Resources folder
         createFolders();
 
-        // Get Filename
+        dataPath = GlobalReferences.CrossSceneText;
+        Debug.Log("DataPath: " + dataPath);
         filename = Path.GetFileName(dataPath);
+
+        forceReload = GlobalReferences.CSReload;
+        Debug.Log("Reload: " + forceReload);
+
+        invertYZ = GlobalReferences.CSInvert;
+        Debug.Log("InvertYZ: " + invertYZ);  
+
+        scale = GlobalReferences.CSScale;
+        Debug.Log("Scale: " + scale);  
 
         loadScene();
     }
@@ -129,6 +142,7 @@ public class PointCloudManagerAdvanced : MonoBehaviour
 
             // Relocate Points near the origin
             calculateMin(points[i]);
+            calculateMax(points[i]);
 
             // GUI
             progress = i * 1.0f / (numPoints - 1) * 1.0f;
@@ -138,6 +152,9 @@ public class PointCloudManagerAdvanced : MonoBehaviour
                 yield return null;
             }
         }
+        
+        
+        closerOrigin();
 
 
         // Instantiate Point Groups
@@ -206,11 +223,9 @@ public class PointCloudManagerAdvanced : MonoBehaviour
             //computing the vertex color using HSV since the final result is better
             colors[i] = Color.HSVToRGB(norm_id, 1, 1);
 
-            //alternatively use Lerp between 2 colors
-            // colors[i] = Color.Lerp(new Color(1, 1, 0), new Color(1, 0, 0), norm_id);
-
             // Relocate Points near the origin
-            // calculateMin(points[i]);
+            calculateMin(points[i]);
+            calculateMax(points[i]);
 
             // GUI
             progress = i * 1.0f / (numPoints - 1) * 1.0f;
@@ -220,6 +235,8 @@ public class PointCloudManagerAdvanced : MonoBehaviour
                 yield return null;
             }
         }
+
+        closerOrigin();
 
 
         // Instantiate Point Groups
@@ -265,9 +282,12 @@ public class PointCloudManagerAdvanced : MonoBehaviour
                 points[i] = new Vector3(float.Parse(buffer[0]) * scale, float.Parse(buffer[1]) * scale, float.Parse(buffer[2]) * scale);
             else
                 points[i] = new Vector3(float.Parse(buffer[0]) * scale, float.Parse(buffer[2]) * scale, float.Parse(buffer[1]) * scale);
-
             
             colors[i] = new Color(1, 1, 0);
+
+            calculateMin(points[i]);
+            calculateMax(points[i]);
+
 
             // GUI
             progress = i * 1.0f / (numPoints - 1) * 1.0f;
@@ -278,6 +298,7 @@ public class PointCloudManagerAdvanced : MonoBehaviour
             }
         }
 
+        closerOrigin();
 
         // Instantiate Point Groups
         numPointGroups = Mathf.CeilToInt(numPoints * 1.0f / limitPoints * 1.0f);
@@ -360,14 +381,41 @@ public class PointCloudManagerAdvanced : MonoBehaviour
         if (point.z < minValue.z)
             minValue.z = point.z;
     }
+    void calculateMax(Vector3 point)
+    {
+        if (maxValue.magnitude == 0)
+            maxValue = point;
+
+
+        if (point.x > maxValue.x)
+            maxValue.x = point.x;
+        if (point.y > maxValue.y)
+            maxValue.y = point.y;
+        if (point.z > maxValue.z)
+            maxValue.z = point.z;
+    }
+
+    void closerOrigin()
+    {
+        for (int i = 0; i < numPoints; i++)
+        {
+            points[i].x -= (minValue.x + maxValue.x)/2;
+            points[i].y -= (minValue.y + maxValue.y)/2;
+            points[i].z -= (minValue.z + maxValue.z)/2;
+        }
+    }
 
     void createFolders()
     {
-        if (!Directory.Exists(Application.dataPath + "/Resources/"))
+        if (!Directory.Exists(Application.dataPath + "/Resources/")) {
+            Debug.Log("Creating Folder at: "+Application.dataPath + "/Resources/");
             UnityEditor.AssetDatabase.CreateFolder("Assets", "Resources");
+        }
 
-        if (!Directory.Exists(Application.dataPath + "/Resources/PointCloudMeshes/"))
+        if (!Directory.Exists(Application.dataPath + "/Resources/PointCloudMeshes/")) {
+            Debug.Log("Creating Folder at: "+ Application.dataPath + "/Resources/PointCloudMeshes/");
             UnityEditor.AssetDatabase.CreateFolder("Assets/Resources", "PointCloudMeshes");
+        }
     }
 
 
