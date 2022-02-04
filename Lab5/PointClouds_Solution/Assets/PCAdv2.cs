@@ -3,6 +3,8 @@ using System.Collections;
 using System.Globalization;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System;
 using TMPro;
 using static GlobalReferences;
 
@@ -34,6 +36,11 @@ public class PCAdv2 : MonoBehaviour
     private Color[] colors;
     private Vector3 minValue;
     private Vector3 maxValue;
+
+    //plane finding
+    private Color[] colorsP;
+    private int[,] planes;
+    private int[] planeSizes;
 
 
     void Start()
@@ -153,9 +160,10 @@ public class PCAdv2 : MonoBehaviour
             }
         }
         
-        
-        closerOrigin();
+        points = closerOrigin(points,numPoints);
 
+        StartCoroutine("findPlanes2");
+        // colors = findPlanes(points, numPoints, colors);
 
         // Instantiate Point Groups
         numPointGroups = Mathf.CeilToInt(numPoints * 1.0f / limitPoints * 1.0f);
@@ -236,8 +244,10 @@ public class PCAdv2 : MonoBehaviour
             }
         }
 
-        closerOrigin();
+        points = closerOrigin(points,numPoints);
 
+        StartCoroutine("findPlanes2");
+        // colors = findPlanes(points, numPoints, colors);
 
         // Instantiate Point Groups
         numPointGroups = Mathf.CeilToInt(numPoints * 1.0f / limitPoints * 1.0f);
@@ -298,7 +308,11 @@ public class PCAdv2 : MonoBehaviour
             }
         }
 
-        closerOrigin();
+        points = closerOrigin(points,numPoints);
+
+        StartCoroutine("findPlanes2");
+        // colors = findPlanes(points, numPoints, colors);
+
 
         // Instantiate Point Groups
         numPointGroups = Mathf.CeilToInt(numPoints * 1.0f / limitPoints * 1.0f);
@@ -395,15 +409,131 @@ public class PCAdv2 : MonoBehaviour
             maxValue.z = point.z;
     }
 
-    void closerOrigin()
+    double calcDistance(Vector3 point1, Vector3 point2)
     {
+        return Math.Sqrt(Math.Pow((point1.x-point2.x),2) + Math.Pow((point1.y-point2.y),2) + Math.Pow((point1.z-point2.z),2));
+    }
+
+    Vector3[] closerOrigin(Vector3[] points, int numPoints)
+    {
+        Vector3[] points2 = new Vector3[numPoints];
         for (int i = 0; i < numPoints; i++)
         {
-            points[i].x -= (minValue.x + maxValue.x)/2;
-            points[i].y -= (minValue.y + maxValue.y)/2;
-            points[i].z -= (minValue.z + maxValue.z)/2;
+            points2[i].x = points[i].x - (minValue.x + maxValue.x)/2;
+            points2[i].y = points[i].y;
+            points2[i].z = points[i].z - (minValue.z + maxValue.z)/2;
         }
+        return points2;
     }
+
+
+    Color[] findPlanes(Vector3[] points, int numPoints, Color[] colors)
+    {
+        int maxPlanes = 5;
+        int maxPointsInPlane = 50;
+        planes = new int[maxPlanes,maxPointsInPlane];
+        planeSizes = new int[numPoints];
+        int[] visited = new int[numPoints];
+        int visitIdx = 0;
+        int planeIdx = 0;
+
+        Color[] colors2 = new Color[numPoints];
+
+        for (int i = 0; i < numPoints; i++)
+        {
+            if (visited.Contains(i)) continue;
+            colors2[i] = colors[i];
+            int planesize = 0;
+            visited[visitIdx] = i;
+            visitIdx++;
+            Debug.Log("i= " + i);
+
+            for (int j = i + 1; j < numPoints; j++)
+            {
+                if (visited.Contains(j)) continue;
+                colors2[j] = colors[j];
+                // if (points[j].x * 0.95 < points[i].x && points[i].x < points[j].x * 1.05){
+                if (calcDistance(points[i], points[j]) < 1) {
+                    if (planesize == maxPointsInPlane) break;
+                    if (planesize == 0){
+                        planes[planeIdx,0] = i;
+                        colors2[i] = Color.cyan;
+                        planesize++;
+                    }
+                    Debug.Log("Adding point " + j + " to plane " + planeIdx);
+                    planes[planeIdx,planesize] = j; 
+                    planesize++;
+                    visited[visitIdx] = j;
+                    colors2[j] = Color.cyan;
+                    visitIdx++;
+                    
+                }
+            }
+            if (visitIdx == numPoints) break;
+            planeSizes[planeIdx] = planesize;
+            Debug.Log("Size of plane " + planeIdx + " : " + (planesize));
+            planeIdx++;
+            if (planeIdx == maxPlanes) break;
+        }
+        Debug.Log("Final PlaneIdx " + planeIdx);
+        
+        return colors2;
+    }
+
+    IEnumerator findPlanes2()
+    {
+        int maxPlanes = 5;
+        int maxPointsInPlane = 50;
+        planes = new int[maxPlanes,maxPointsInPlane];
+        planeSizes = new int[numPoints];
+        int[] visited = new int[numPoints];
+        int visitIdx = 0;
+        int planeIdx = 0;
+
+        Color[] colors2 = new Color[numPoints];
+
+        for (int i = 0; i < numPoints; i++)
+        {
+            if (visited.Contains(i)) continue;
+            colors2[i] = colors[i];
+            int planesize = 0;
+            visited[visitIdx] = i;
+            visitIdx++;
+            Debug.Log("i= " + i);
+
+            for (int j = i + 1; j < numPoints; j++)
+            {
+                if (visited.Contains(j)) continue;
+                colors2[j] = colors[j];
+                // if (points[j].x * 0.95 < points[i].x && points[i].x < points[j].x * 1.05){
+                if (calcDistance(points[i], points[j]) < 1) {
+                    if (planesize == maxPointsInPlane) break;
+                    if (planesize == 0){
+                        planes[planeIdx,0] = i;
+                        colors2[i] = Color.cyan;
+                        planesize++;
+                    }
+                    Debug.Log("Adding point " + j + " to plane " + planeIdx);
+                    planes[planeIdx,planesize] = j; 
+                    planesize++;
+                    visited[visitIdx] = j;
+                    colors2[j] = Color.cyan;
+                    visitIdx++;
+                    
+                }
+            }
+            if (visitIdx == numPoints) break;
+            planeSizes[planeIdx] = planesize;
+            Debug.Log("Size of plane " + planeIdx + " : " + (planesize));
+            planeIdx++;
+            if (planeIdx == maxPlanes) break;
+            yield return null;
+        }
+        Debug.Log("Final PlaneIdx " + planeIdx);
+        yield return null;
+
+    }
+
 
     void createFolders()
     {
