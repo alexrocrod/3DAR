@@ -6,6 +6,7 @@ Shader "Unlit/NeonShader"
         _MainTex("Texture", 2D) = "white" {}
         _Color("Color", Color) = (1,1,1,1)
         _Glow("Intensity", Range(0, 3)) = 1
+        _PointSize("Point size", Float) = 2.0 
     }
         SubShader{
             Tags { "Queue" = "Transparent" "IgnoreProjector" = "True" "RenderType" = "Transparent" }
@@ -32,12 +33,16 @@ Shader "Unlit/NeonShader"
                     struct v2f {
                         float4 pos : SV_POSITION;
                         half2 tex : TEXCOORD0;
+                        float size: PSIZE;
                     };
+
+                    uniform float _PointSize = 2;
 
                     v2f vert(vertIn v) {
                         v2f o;
                         o.pos = UnityObjectToClipPos(v.pos);
                         o.tex = v.tex * _MainTex_ST.xy + _MainTex_ST.zw;
+                        o.size = _PointSize;
                         return o;
                     }
 

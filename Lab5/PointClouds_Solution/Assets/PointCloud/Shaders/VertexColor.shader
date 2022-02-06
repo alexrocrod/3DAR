@@ -1,6 +1,10 @@
 ﻿// Upgrade NOTE: replaced 'mul(UNITY_MATRIX_MVP,*)' with 'UnityObjectToClipPos(*)'
 
 Shader "Custom/VertexColor" {
+    Properties     
+    {         
+        _PointSize("Point size", Float) = 2.0    
+    } 
     SubShader {
     Pass {
         LOD 200
@@ -9,6 +13,7 @@ Shader "Custom/VertexColor" {
         CGPROGRAM
         #pragma vertex vert
         #pragma fragment frag
+
   
         struct VertexInput {
             float4 v : POSITION;
@@ -18,14 +23,18 @@ Shader "Custom/VertexColor" {
         struct VertexOutput {
             float4 pos : SV_POSITION;
             float4 col : COLOR;
+            float size: PSIZE;
         };
+
+        uniform float _PointSize = 2;
+
          
         VertexOutput vert(VertexInput v) {
          
             VertexOutput o;
             o.pos = UnityObjectToClipPos(v.v);
-            // o.pos = mul(UNITY_MATRIX_MVP,*);
             o.col = v.color;
+            o.size = _PointSize;
              
             return o;
         }

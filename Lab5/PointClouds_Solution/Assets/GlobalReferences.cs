@@ -12,5 +12,7 @@ public static class GlobalReferences
 
     public static float CSScale{ get; set; }
 
+    public static bool CSNeon{ get; set; }
+
 
 }

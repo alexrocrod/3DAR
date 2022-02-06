@@ -18,6 +18,9 @@ public class Menu1 : MonoBehaviour
     [SerializeField] private GameObject toggleInvert;
     private bool invert;
 
+    [SerializeField] private GameObject toggleNeon;
+    private bool neon;
+
     [SerializeField] private GameObject sliderScale;
     private float scale;
 
@@ -34,6 +37,10 @@ public class Menu1 : MonoBehaviour
         Debug.Log("Invert: " + toggleInvert.GetComponent<Toggle>().isOn);
         invert = toggleInvert.GetComponent<Toggle>().isOn;
         GlobalReferences.CSInvert = invert;
+
+        Debug.Log("Neon: " + toggleNeon.GetComponent<Toggle>().isOn);
+        neon = toggleNeon.GetComponent<Toggle>().isOn;
+        GlobalReferences.CSNeon = neon;
 
         Debug.Log("Scale: " + sliderScale.GetComponent<Slider>().value);
         scale = sliderScale.GetComponent<Slider>().value;
