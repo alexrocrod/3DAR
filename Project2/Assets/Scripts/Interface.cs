@@ -31,13 +31,13 @@ public class Interface : MonoBehaviour
     void Start()
     {
         m_toggle = tg.GetComponent<Toggle>();
-        m_toggle.onValueChanged.AddListener(delegate {ToggleValueChanged(m_toggle);});
+        m_toggle.onValueChanged.AddListener(delegate{ToggleValueChanged(m_toggle);});
 
         m_sliderPS = sliderPSize.GetComponent<Slider>();
-        m_sliderPS.onValueChanged.AddListener(delegate {SliderValueChanged(m_sliderPS);});
+        m_sliderPS.onValueChanged.AddListener(delegate{SliderValueChanged(m_sliderPS);});
 
         m_sliderC = sliderColor.GetComponent<Slider>();
-        m_sliderC.onValueChanged.AddListener(delegate {SliderColorChanged(m_sliderC);});
+        m_sliderC.onValueChanged.AddListener(delegate{SliderColorChanged(m_sliderC);});
 
         neon = GlobalReferences.CSNeon;
 
@@ -47,28 +47,21 @@ public class Interface : MonoBehaviour
         Rect rect = new Rect(0, 0, density, 1);
         sliderBg.sprite = Sprite.Create(colorTex, rect, rect.center);
 
-        // defaults:
+        // Defaults:
         SliderColorChanged(m_sliderC);
         SliderValueChanged(m_sliderPS);
-
     }
 
-    // change camera behaviour
+    // Change camera behaviour
     void ToggleValueChanged(Toggle change)
     {
-        if (m_toggle.isOn){
-            GetComponent<CarCameraScript>().enabled = false;
-            car.GetComponent<NewMove>().enabled = false;
-            GetComponent<UnityEngine.Rendering.FreeCamera>().enabled = true;
-        }
-        else {
-            GetComponent<CarCameraScript>().enabled = true;
-            car.GetComponent<NewMove>().enabled = true;
-            GetComponent<UnityEngine.Rendering.FreeCamera>().enabled = false;
-        }
+        bool on = m_toggle.isOn;
+        GetComponent<CarCameraScript>().enabled = !on;
+        car.GetComponent<NewMove>().enabled = !on;
+        GetComponent<UnityEngine.Rendering.FreeCamera>().enabled = on;
     }
 
-    // change point size
+    // Change point size
     void SliderValueChanged(Slider change)
     {
         if (!neon)
@@ -77,7 +70,7 @@ public class Interface : MonoBehaviour
             MatNeon.SetFloat("_PointSize", m_sliderPS.value);
     }
 
-    // change slider and point color
+    // Change slider and point color
     void SliderColorChanged(Slider change)
     {
         sliderHandle.color = Color.HSVToRGB(m_sliderC.value, 1, 1);
@@ -86,7 +79,7 @@ public class Interface : MonoBehaviour
     }
 
     // Color strip texture
-    private Texture2D ColorStrip (int density)
+    Texture2D ColorStrip (int density)
     {
         Texture2D hueTex = new Texture2D (density, 1);
         Color[] colors = new Color[density];

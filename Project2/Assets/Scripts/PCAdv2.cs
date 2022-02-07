@@ -12,6 +12,8 @@ public class PCAdv2 : MonoBehaviour
     // File
     public string dataPath;
     private string filename;
+
+    // Materials
     public Material matVertex;
     public Material matNeon;
 
@@ -22,25 +24,26 @@ public class PCAdv2 : MonoBehaviour
 
     // PointCloud
     private GameObject pointCloud;
+    public int numPoints;
+    public int numPointGroups;
+    private int limitPoints = 65000;
+    private Vector3[] points;
+    private Color[] colors;
 
+    // Points statistics
+    private Vector3 minValue;
+    private Vector3 maxValue;
+    private Vector3 avgValue;
+
+    // Menu Parameters
     public bool neon = false;
     public float scale = 1;
     public bool invertYZ = false;
     public bool forceReload = false;
 
-    public int numPoints;
-    public int numPointGroups;
-    private int limitPoints = 65000;
-
-    private Vector3[] points;
-    private Color[] colors;
-    private Vector3 minValue;
-    private Vector3 maxValue;
-    private Vector3 avgValue;
-
     void Start()
     {
-        // Garantee Parsing as en-Us culture
+        // Garantee Parsing as Invariant culture (. is the decimal separator)
 		CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
 		CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
 
@@ -57,8 +60,6 @@ public class PCAdv2 : MonoBehaviour
 
         loadScene();
     }
-
-
 
     void loadScene()
     {
@@ -80,7 +81,6 @@ public class PCAdv2 : MonoBehaviour
             loadStoredMeshes();
     }
 
-
     void loadPointCloud()
     {
         // Check what file exists
@@ -101,7 +101,6 @@ public class PCAdv2 : MonoBehaviour
     // Load stored PointCloud
     void loadStoredMeshes()
     {
-
         Debug.Log("Using previously loaded PointCloud: " + filename);
 
         GameObject pointGroup = Instantiate(Resources.Load("PointCloudMeshes/" + filename)) as GameObject;
@@ -112,7 +111,6 @@ public class PCAdv2 : MonoBehaviour
     // Start Coroutine of reading the points from the OFF file and creating the meshes
     IEnumerator loadOFF(string dPath)
     {
-
         // Read file
         StreamReader sr = new StreamReader(Application.dataPath + dPath);
         sr.ReadLine(); // OFF
@@ -122,6 +120,7 @@ public class PCAdv2 : MonoBehaviour
         points = new Vector3[numPoints];
         colors = new Color[numPoints];
         minValue = new Vector3();
+        maxValue = new Vector3();
 
         for (int i = 0; i < numPoints; i++)
         {
@@ -139,7 +138,7 @@ public class PCAdv2 : MonoBehaviour
                     colors[i] = Color.cyan;
             }
 
-            // To relocate Points near the origin
+            // To relocate points near the origin
             calculateMin(points[i]);
             calculateMax(points[i]);
 
@@ -174,11 +173,10 @@ public class PCAdv2 : MonoBehaviour
         loaded = true;
     }
 
-
     /*
 	 * Method to Load LiDAR Simulator Point Clouds
 	 */
-    // Start Coroutine of reading the points from the OFF file and creating the meshes
+    // Start Coroutine of reading the points from the TXT file and creating the meshes
     IEnumerator loadLiDAR(string dPath)
     {
         //Count lines
@@ -198,6 +196,7 @@ public class PCAdv2 : MonoBehaviour
         points = new Vector3[numPoints];
         colors = new Color[numPoints];
         minValue = new Vector3();
+        maxValue = new Vector3();
 
         for (int i = 0; i < numPoints; i++)
         {
@@ -232,7 +231,7 @@ public class PCAdv2 : MonoBehaviour
             }
         }
 
-        // Instantiate Point Groups
+        // Instantiate point Groups
         numPointGroups = Mathf.CeilToInt(numPoints * 1.0f / limitPoints * 1.0f);
 
         pointCloud = new GameObject(filename);
@@ -254,6 +253,7 @@ public class PCAdv2 : MonoBehaviour
         loaded = true;
     }
 
+    // Start Coroutine of reading the points from the PTS file and creating the meshes
     IEnumerator loadPTS(string dPath)
     {
         // Read file
@@ -262,10 +262,10 @@ public class PCAdv2 : MonoBehaviour
         numPoints = int.Parse(buffer[0]);
         Debug.Log("Points: " + numPoints);
 
-
         points = new Vector3[numPoints];
         colors = new Color[numPoints];
         minValue = new Vector3();
+        maxValue = new Vector3();
 
         for (int i = 0; i < numPoints; i++)
         {
@@ -280,9 +280,9 @@ public class PCAdv2 : MonoBehaviour
                 colors[i] = new Color(1, 1, 0);
             }
 
+            // To relocate points near the origin
             calculateMin(points[i]);
             calculateMax(points[i]);
-
 
             // GUI
             progress = i * 1.0f / (numPoints - 1) * 1.0f;
@@ -330,7 +330,6 @@ public class PCAdv2 : MonoBehaviour
         pointGroup.GetComponent<MeshFilter>().mesh = CreateMesh(meshInd, nPoints, limitPoints);
         pointGroup.transform.parent = pointCloud.transform;
 
-
         // Store Mesh
         UnityEditor.AssetDatabase.CreateAsset(pointGroup.GetComponent<MeshFilter>().mesh, "Assets/Resources/PointCloudMeshes/" + filename + @"/" + filename + meshInd + ".asset");
         UnityEditor.AssetDatabase.SaveAssets();
@@ -339,7 +338,6 @@ public class PCAdv2 : MonoBehaviour
 
     Mesh CreateMesh(int id, int nPoints, int limitPoints)
     {
-
         Mesh mesh = new Mesh();
 
         Vector3[] myPoints = new Vector3[nPoints];
@@ -347,11 +345,11 @@ public class PCAdv2 : MonoBehaviour
         Color[] myColors = new Color[nPoints];
 
         avgValue = (minValue + maxValue)/2;
-        avgValue.y = minValue.y; // points on top of the plane at y=0
+        avgValue.y = minValue.y; // points above the plane
 
         for (int i = 0; i < nPoints; ++i)
         {
-            myPoints[i] = points[id * limitPoints + i] - avgValue; // points closer to the origin
+            myPoints[i] = points[id * limitPoints + i] - avgValue; // PointCloud centered on (0,0,0)
             indecies[i] = i;
             if (!neon) myColors[i] = colors[id * limitPoints + i];
         }
@@ -362,7 +360,6 @@ public class PCAdv2 : MonoBehaviour
         mesh.SetIndices(indecies, MeshTopology.Points, 0);
         mesh.uv = new Vector2[nPoints];
         mesh.normals = new Vector3[nPoints];
-
 
         return mesh;
     }
